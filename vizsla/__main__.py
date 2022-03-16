@@ -1,6 +1,10 @@
 from InfoStream import JIRASearchIssueList, GitHubPullsStream
+from BuildReport import BuildReport
 
 if __name__ == '__main__':
+
+    nightlies = BuildReport()
+    nightlies.print_failure_dates()
 
     r_issues = JIRASearchIssueList('project%20%3D%20ARROW%20AND%20resolution%20%3D%20Unresolved%20AND%20('
                                    'summary%20~%20%22%5C%5C%5BR%5C%5C%5D%22%20OR%20component%20%3D%20R%20)%20ORDER'
