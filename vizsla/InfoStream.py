@@ -2,18 +2,48 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 import requests
 
+from Issue import Issue, PR
+
 
 class InfoStream(ABC):
-    def __init__(self, cache=None):
-        # Cache is a {datetime: array} dict where datetime is the datetime of retrieval and the array is the results
-        self.cache = cache
-        # When we build in mechanisms to update from the cache, this value is updated upon successful retrieval
-        self.last_updated = None
+    def __init__(self):
+        pass
 
 
 class JIRAStream(InfoStream):
     def __init__(self):
         super().__init__()
+
+
+def parse_issue(issue):
+    """
+    Convert issues to correct format
+    :param issue:
+    :return:
+    """
+    issue_fields = issue.get("fields")
+
+    issue_id = issue.get("key")
+    name = issue_fields.get("summary")
+    description = issue_fields.get("description")
+    status = issue_fields.get("status")
+    if status is not None:
+        status = status.get("name")
+    priority = issue_fields.get("priority")
+    if priority is not None:
+        priority = priority.get("name")
+    assignee = issue_fields.get("assignee")
+    if assignee is not None:
+        assignee = assignee.get("name")
+    reporter = issue_fields.get("reporter")
+    if reporter is not None:
+        reporter = reporter.get("name")
+
+    return Issue(issue_id, name, description, status, priority, assignee, reporter)
+
+
+def parse_pr(pr):
+    return PR(pr.get("html_url"), pr.get("number"), pr.get("title"))
 
 
 class JIRAIssueList(JIRAStream):
@@ -22,39 +52,18 @@ class JIRAIssueList(JIRAStream):
         super().__init__()
 
     def get_issues(self):
-        return self.cache
-
-    def __update_issues(self):
-        """
-        Update issues in the cache
-        :return:
-        """
-        update_time, new_issues = self.__fetch_issues()
-        cache_entry = [{update_time: new_issues}]
-        self.cache = cache_entry + self.cache
-        self.last_updated = update_time
-
-    def __fetch_issues(self):
         """
         Fetch issues from the URL
         :return: time the issues were retrieved, and the parsed issues
         """
-        update_time = datetime.now()
+
+        print("Trying URL: " + self.url)
         response = requests.get(self.url)
         if response.ok:
-            parsed_issues = self.__parse_issues(response.json()["issues"])
-            return update_time, parsed_issues
+            parsed_issues = [parse_issue(issue) for issue in response.json().get("issues")]
+            return parsed_issues
         else:
             raise RuntimeError("API response was not OK!")
-
-    def __parse_issues(self, issues):
-        """
-        Convert issues to correct format
-        :param issues:
-        :return:
-        """
-        parsed_issues = issues
-        return parsed_issues
 
 
 class JIRASearchIssueList(JIRAIssueList):
@@ -85,6 +94,32 @@ def jira_api_query(jql):
     return intro_string + jql
 
 
+def github_api_query(query):
+    intro_string = "https://api.github.com/"
+    return intro_string + query
+
+
 class GitHubStream(InfoStream):
     def __init__(self):
         super().__init__()
+
+
+class GitHubPullsStream(GitHubStream):
+    def __init__(self, query):
+        super().__init__()
+        self.query = query
+        self.url = github_api_query(query)
+
+    def get_prs(self):
+        """
+        Fetch issues from the URL
+        :return:
+        """
+
+        print("Trying URL: " + self.url)
+        response = requests.get(self.url)
+        if response.ok:
+            parsed_prs = [parse_pr(pr) for pr in response.json()]
+            return parsed_prs
+        else:
+            raise RuntimeError("API response was not OK!")
