@@ -11,9 +11,9 @@ class BuildReport:
         failure_list = self.get_failure_date_list()
         # Print new failures and failures by how long they've been failing for
         print("New failures today:\n")
-        today = date.today()
+
         for (name, fail_date) in failure_list:
-            if fail_date == str(today.year) + "-" + str(today.month) + "-" + str(today.day):
+            if fail_date == date.today().strftime("%Y-%m-%d"):
                 print(name)
 
         print("\nFailures and first occurrence:\n")
