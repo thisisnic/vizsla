@@ -45,6 +45,7 @@ class BuildReport:
                     failure_list.append((job, earliest_failure_date))
                     break
 
+        failure_list.sort(key=lambda y: y[1], reverse=True)
         return failure_list
 
     def get_failed_builds(self):
