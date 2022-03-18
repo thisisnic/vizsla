@@ -5,9 +5,13 @@ Retrieve items from various sources which are useful for day-to-day maintainer t
 * GitHub API
 * Arrow nightly builds email digest
 
-WIP - but you can get the nightly build digest running by running the main method.  Example output:
+WIP - but you can get the nightly build digest running as below.  Keep in mind that there is still a bug where 
+a build marked as "pending" will appear to have "succeeded" and so the reported date that a build first failed may be 
+affected by this (i.e. the build may have been failing for longer than reported).
 
 ```
+$ python vizsla nightlies
+
 New failures today:
 
 test-ubuntu-18.04-r-sanitizer
